@@ -23,22 +23,41 @@ def df_capacity(df: pd.DataFrame) -> pd.DataFrame:
 
 def capacity(df: pd.DataFrame) -> list:
     """
-    Evaluate capacity of measurement in df with step_type = [21,22]
+    Return capacity of measurement (in units Ah).
 
     :param df: pd.DataFrame: df with step_type = [21,22]
     :return: {'Q_mean': float, 'Q_ch': float, 'Q_dch': float, 'q_ch': np.ndarray, 'q_dch': np.ndarray}
     """
-    q_kapa_ch = q_calc(df[(df.step_type == 21) & (df.c_cur > 0)])
-    q_kapa_dch = q_calc(df[(df.step_type == 22) & (df.c_cur < 0)])
+    df_ch = df[(df.step_type == 21) & (df.c_cur > 0)]
+    q_kapa_ch = q_calc(df_ch)
 
-    capa_ch = q_kapa_ch[-1] - q_kapa_ch[0]
-    capa_dch = q_kapa_dch[0] - q_kapa_dch[-1]
+    df_dch = df[(df.step_type == 22) & (df.c_cur < 0)]
+    q_kapa_dch = q_calc(df_dch)
 
-    capa_mean = (capa_ch + capa_dch) / 2 / 3600
-    capa_ch = capa_ch / 3600
-    capa_dch = capa_dch / 3600
+    if len(q_kapa_ch) >= 1:
+        # Converts here from A*s -> A*hr
+        capa_ch = (q_kapa_ch[-1] - q_kapa_ch[0])/3600
+        t_charge = df_ch.iloc[0].run_time
+    else:
+        capa_ch = np.nan
+        t_charge = np.nan
 
-    return {'Q_mean': capa_mean, 'Q_ch': capa_ch, 'Q_dch': capa_dch, 'q_ch': q_kapa_ch, 'q_dch': q_kapa_dch}
+    if len(q_kapa_dch) >= 1:
+        capa_dch = (q_kapa_dch[0] - q_kapa_dch[-1])/3600
+        t_discharge = df_dch.iloc[0].run_time
+    else:
+        capa_dch = np.nan
+        t_discharge = np.nan
+
+
+
+    # Return nan if neither charge or discharge profile is available...
+    if np.isnan(capa_ch) and np.isnan(capa_dch):
+        q_mean = np.nan
+    else:
+        q_mean = np.nanmean([capa_ch, capa_dch])
+    return {'Q_mean': q_mean, 'Q_charge': capa_ch, "Q_discharge": capa_dch,
+            't_charge': t_charge, 't_discharge': t_discharge}
 
 
 def q_calc(df: pd.DataFrame) -> np.ndarray:
@@ -186,7 +205,7 @@ def df_single_pulse(df: pd.DataFrame,
 
     # identify state changes by current changes
     current_changes_idx = abs(df.c_cur.diff()) > 1
-    current_changes_idx = current_changes_idx.index[current_changes_idx == True]
+    current_changes_idx = current_changes_idx.index[current_changes_idx]
 
     if len(current_changes_idx) < 2:
         print('Warning: Pulse contains less than 2 current changes. Pulse might be corrupted.')
@@ -226,7 +245,7 @@ def rdc_extract(df: pd.DataFrame, ocv_fcns: dict, t: float = 10) -> list:
 
     # Extract the pulse only by identifying state changes by current changes
     current_changes_idx = abs(df.c_cur.diff()) > 1
-    current_changes_idx = current_changes_idx.index[current_changes_idx == True]
+    current_changes_idx = current_changes_idx.index[current_changes_idx]
 
     pulse_idx_0 = current_changes_idx[0]
     pulse_idx_1 = current_changes_idx[-1]
@@ -360,11 +379,14 @@ def fec_extract(df: pd.DataFrame, capa_ref: float = 4.9) -> float:
 
     try:
         q_pos_half = df[df.step_type == 41]
+        run_time_diff_pos = df.run_time.diff()
         q_neg_half = df[df.step_type == 42]
+        run_time_diff_neg = df.run_time.diff()
 
-        q_val_pos = (q_pos_half.run_time_diff * q_pos_half.c_cur).fillna(0).values
-        q_val_neg = (q_neg_half.run_time_diff * q_neg_half.c_cur).fillna(0).values
+        q_val_pos = (run_time_diff_pos * q_pos_half.c_cur).fillna(0).values
+        q_val_neg = (run_time_diff_neg * q_neg_half.c_cur).fillna(0).values
 
+        # Why are we rounding here???
         fec_pos = abs(sum(q_val_pos)).round(2)
         fec_neg = abs(sum(q_val_neg)).round(2)
 
