@@ -24,7 +24,12 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
-dependencies = []
+dependencies = [
+  "numpy",
+  "pandas",
+  "scipy",
+  "matplotlib"
+]
 
 [project.urls]
 Documentation = "https://github.com/Sean Jennings/battery-health-analytics#readme"
@@ -33,6 +38,15 @@ Source = "https://github.com/Sean Jennings/battery-health-analytics"
 
 [tool.hatch.version]
 path = "src/battery_health/__about__.py"
+
+[tool.hatch.envs.dev]
+skip-install = false
+extra-dependencies = [
+  # Jupyter
+  "notebook",
+  "jupyterlab-vim",
+]
+
 
 [tool.hatch.envs.types]
 extra-dependencies = [
