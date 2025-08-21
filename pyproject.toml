@@ -47,6 +47,9 @@ extra-dependencies = [
   "jupyterlab-vim",
 ]
 
+[tool.hatch.envs.dev.scripts]
+server = "jupyter lab"
+
 
 [tool.hatch.envs.types]
 extra-dependencies = [
