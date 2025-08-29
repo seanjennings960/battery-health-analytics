@@ -1,0 +1,26 @@
+name: Devcontainer Build
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - ".devcontainer/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      
+      - name: Build and push devcontainer
+        uses: devcontainers/ci@v0.3
+        with:
+          imageName: ghcr.io/${{ github.repository }}/dev
+          cacheFrom: ghcr.io/${{ github.repository }}/dev
+          push: always

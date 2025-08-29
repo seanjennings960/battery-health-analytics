@@ -1,0 +1,19 @@
+name: CI
+on:
+  push: { branches: [ main ] }
+  pull_request: {branches: [ main ] }
+
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    container:
+      image: ghcr.io/seanjennings960/battery-health-analytics/dev:latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Test
+        run: hatch test
