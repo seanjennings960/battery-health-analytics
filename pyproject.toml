@@ -51,6 +51,15 @@ extra-dependencies = [
 server = "jupyter lab"
 
 
+[tool.hatch.envs.test]
+extra-dependencies = [
+  "pytest>=6.0",
+  "pytest-cov",
+]
+[tool.hatch.envs.test.scripts]
+test = "pytest {args:tests}"
+test-cov = "pytest --cov=battery_health --cov-report=term-missing {args:tests}"
+
 [tool.hatch.envs.types]
 extra-dependencies = [
   "mypy>=1.0.0",
