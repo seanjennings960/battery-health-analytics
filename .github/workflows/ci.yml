@@ -10,6 +10,9 @@ jobs:
 
     container:
       image: ghcr.io/seanjennings960/battery-health-analytics/dev:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       - name: Checkout
